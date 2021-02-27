@@ -6,6 +6,12 @@ import shotgun_api3
 from shotgun_api3 import Shotgun
 import pprint
 #ideally create a Logger object here
+
+from flask import Flask
+app = Flask(__name__)
+
+
+
 pp = pprint.PrettyPrinter(indent=2)
 
 
@@ -15,9 +21,9 @@ print(sg)
 
 #find shots 
 project = sg.find_one("Project", [["id", "is", 85]])
-filters = [['project', 'is', {'type': 'Project', 'id': project['id']}]]
+# filters = [['project', 'is', {'type': 'Project', 'id': project['id']}]]
 fields = ['id', 'code', 'Sequence']
-shots = sg.find("Shot", filters, fields)
+# shots = sg.find("Shot", filters, fields)
 # print(shots)
 
 
@@ -26,11 +32,31 @@ shots = sg.find("Shot", filters, fields)
 #results of query fields aren't stored -> not supported in UI -> grab fields and calculate? 
 #Shotgun.summarize()
 
+@app.route('/lk/project/<projectID>/sequences')
+def sequences(projectID):
+    filters = [['project', 'is', {'type': 'Project', 'id': int(projectID)}]]
+    sequences = sg.find('Sequence', filters)
+    html = '''<table>
+    <thead>
+        <tr>
+            <td>sequence_id</td>
+            <td>sg_cut_durations</td>
+            <td>sg_ip_versions</td>
+            
+        </tr>
+    </thead>
+    <tbody>
+    '''
+    for sequence in sequences:
+        html+='<tr>'
+        html+='<td>' + str(sequence['id']) + '</td>\n'
+        html+= '<td>' + str(run_query(sequence, 'sg_cut_duration')) + '</td>\n'
+        html+= '<td>' + str(run_query(sequence, 'sg_ip_versions')) + '</td>\n'
+        html+='<tr>'
+    html += '<tbody>\n</table>'
 
-#Find filter conditions for a field
-# filters = [['project', 'is', {'type': 'Project', 'id': project['id']}]]
-fields = ['id', 'code', 'filters', 'Project']
-queried = sg.find('Sequence', filters, fields)
+    return html
+
 # print(queried)
 
 Qtable = (sg.schema_field_read('Sequence', 'sg_ip_versions'))
@@ -78,8 +104,12 @@ def run_query ( entity_obj,schema_fname):
     filters = new_filters(Query_Props['query']['value']['filters']['conditions'], entity_obj)# [ Query_Props['query']['value']['filters']['conditions']['path'], 'is', entity_obj] # shots where sg_sequence is id 40
     filter_operator = 'all'
     summary_fields=[{'field': Query_Props['summary_field']['value'], 'type': Query_Props['summary_default']['value']}]
-    pp.pprint(sg.summarize(Query_Props['query']['value']['entity_type'], filters, summary_fields, filter_operator))
+    return sg.summarize(Query_Props['query']['value']['entity_type'], filters, summary_fields, filter_operator)['summaries']
+
+
+
 
 arg1 = {'type': 'Sequence' ,'id': 40} #sg represents entity with type and id 
 run_query( arg1, 'sg_ip_versions') 
+app.run() 
 #{entity_type: id: }, query_field_name                   
