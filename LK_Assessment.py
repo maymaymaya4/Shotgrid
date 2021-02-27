@@ -58,6 +58,7 @@ def filters_from_schema(conditions, parent):
         for value in condition['values']:
             if isinstance(value, str):
                 values.append(value)
+            # SG id 0 represents parent entity
             elif value['id'] == 0:
                 values.append(parent)
             else:
