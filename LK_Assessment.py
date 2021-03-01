@@ -10,6 +10,8 @@ app = Flask(__name__)
 sg = Shotgun("https://laika-demo.shotgunstudio.com",
              'code_challenge', '$zvMznkhddo0tgwgwbftzaqob')
 
+# ideally add a Logger
+
 
 @app.route('/lk/project/<projectID>/shots')
 def shots(projectID):
